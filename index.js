@@ -91,6 +91,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const requestContainer = document.createElement('div');
             requestContainer.className = 'request-container';
 
+            // Add Conversation Counter
+            const conversationCounter = document.createElement('div');
+            conversationCounter.className = 'conversation-counter';
+            const conversationNumber = document.createElement('span');
+            conversationNumber.className = 'conversation-number';
+            conversationNumber.textContent = `# ${data.requests.indexOf(request) + 1}`;
+            conversationCounter.appendChild(conversationNumber);
+            requestContainer.appendChild(conversationCounter);
+
             // Add User Message
             if (request.message && request.message.text) {
                 const userMessage = document.createElement('div');
@@ -154,14 +163,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // Add timestamp if available
-            if (request.timestamp) {
-                const timestamp = document.createElement('div');
-                timestamp.className = 'timestamp';
-                const date = new Date(request.timestamp);
-                timestamp.textContent = date.toLocaleString();
-                requestContainer.appendChild(timestamp);
-            }
+            // // Add timestamp if available
+            // if (request.timestamp) {
+            //     const timestamp = document.createElement('div');
+            //     timestamp.className = 'timestamp';
+            //     const date = new Date(request.timestamp);
+            //     timestamp.textContent = date.toLocaleString();
+            //     requestContainer.appendChild(timestamp);
+            // }
 
             chatContainer.appendChild(requestContainer);
         });
