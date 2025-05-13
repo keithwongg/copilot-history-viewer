@@ -105,11 +105,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const userMessage = document.createElement('div');
                 userMessage.className = 'message message-user';
 
-                const userText = document.createElement('div');
-                userText.style.whiteSpace = 'pre-wrap';
-                userText.textContent = request.message.text;
-
-                userMessage.appendChild(userText);
+                // Process the user message for code blocks
+                const processedUserText = processUserMessageCodeBlocks(request.message.text);
+                userMessage.appendChild(processedUserText);
+                
                 requestContainer.appendChild(userMessage);
             }
 
@@ -189,6 +188,59 @@ document.addEventListener('DOMContentLoaded', () => {
         return text
             .replace(/```([^`]+)```/g, '<pre class="code-inline-block">$1</pre>')
             .replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+    }
+
+    // Process user message text to detect and format code blocks
+    function processUserMessageCodeBlocks(text) {
+        if (!text) return document.createElement('div');
+
+        const container = document.createElement('div');
+        container.style.whiteSpace = 'pre-wrap';
+
+        // Split by code block markers (```), preserving markers
+        const segments = text.split(/(```(?:.*\n)?[\s\S]*?```)/g);
+
+        for (const segment of segments) {
+            // Check if this segment is a code block
+            if (segment.startsWith('```') && segment.endsWith('```')) {
+                // Extract language if specified (e.g., ```javascript)
+                let language = 'text';
+                let codeContent = segment.substring(3, segment.length - 3);
+                
+                // Check if the first line has a language specifier
+                const firstLineEnd = codeContent.indexOf('\n');
+                if (firstLineEnd > 0) {
+                    const possibleLang = codeContent.substring(0, firstLineEnd).trim();
+                    if (possibleLang && !possibleLang.includes(' ')) {
+                        language = possibleLang;
+                        codeContent = codeContent.substring(firstLineEnd + 1);
+                    }
+                }
+
+                // Create a code block element
+                const codeBlock = document.createElement('pre');
+                codeBlock.className = 'user-code-block';
+                codeBlock.setAttribute('data-language', language);
+
+                const codeElement = document.createElement('code');
+                codeElement.textContent = codeContent.trim();
+                codeBlock.appendChild(codeElement);
+
+                container.appendChild(codeBlock);
+            } else if (segment.includes('`')) {
+                // Process inline code blocks
+                const processed = document.createElement('div');
+                processed.innerHTML = formatInlineCodeBlocks(segment);
+                container.appendChild(processed);
+            } else {
+                // Regular text
+                const textNode = document.createElement('div');
+                textNode.textContent = segment;
+                container.appendChild(textNode);
+            }
+        }
+
+        return container;
     }
 
     // Utility function to extract the file name from a path
