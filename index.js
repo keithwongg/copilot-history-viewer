@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Process the files
     function handleFiles(files) {
         const file = files[0];
+        const loadingSpinner = document.getElementById('loading-spinner');
 
         if (file.type !== 'application/json' && !file.name.endsWith('.json')) {
             alert('Please upload a JSON file.');
@@ -46,6 +47,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         fileName.textContent = `Selected file: ${file.name}`;
+
+        // Show loading spinner
+        loadingSpinner.style.display = 'flex';
 
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -55,6 +59,9 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 console.error('Error parsing JSON:', error);
                 alert('Error parsing the file. Please make sure it is a valid JSON file.');
+            } finally {
+                // Hide loading spinner
+                loadingSpinner.style.display = 'none';
             }
         };
         reader.readAsText(file);
@@ -112,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (processedResponses.length > 0) {
                         // Create a single AI response bubble
                         const aiResponse = document.createElement('div');
-                        aiResponse.className = 'message message-ai';
+                        aiResponse.className = 'message message-ai collapsed';
 
                         // Check if this response contains code edits and add a special class
                         const hasCodeEdits = request.response.some(resp => resp.kind === 'textEditGroup');
@@ -124,6 +131,23 @@ document.addEventListener('DOMContentLoaded', () => {
                         processedResponses.forEach(content => {
                             aiResponse.appendChild(content);
                         });
+
+                        // Add toggle button
+                        const toggleButton = document.createElement('button');
+                        toggleButton.className = 'toggle-message';
+                        toggleButton.textContent = 'Show more';
+                        toggleButton.addEventListener('click', function () {
+                            if (aiResponse.classList.contains('collapsed')) {
+                                aiResponse.classList.remove('collapsed');
+                                aiResponse.classList.add('expanded');
+                                toggleButton.textContent = 'Show less';
+                            } else {
+                                aiResponse.classList.remove('expanded');
+                                aiResponse.classList.add('collapsed');
+                                toggleButton.textContent = 'Show more';
+                            }
+                        });
+                        aiResponse.appendChild(toggleButton);
 
                         requestContainer.appendChild(aiResponse);
                     }
@@ -245,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 filePathDiv.className = 'code-edit-header';
                 const path = resp.uri ? resp.uri.path || resp.uri.fsPath : 'Unknown file';
                 const fileName = getDisplayFileName(path);
-                
+
                 // Extract the file extension to determine language
                 const language = getLanguageFromPath(path);
                 filePathDiv.textContent = `File: ${fileName} (${language})`;
@@ -255,17 +279,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (resp.edits && resp.edits.length > 0) {
                     // Compile all edits into a single code block
                     const compiledCode = compileTextEditsIntoCode(resp.edits);
-                    
+
                     if (compiledCode) {
                         const codeContent = document.createElement('pre');
                         codeContent.className = 'code-content';
-                        
+
                         // Add language indicator
                         const langIndicator = document.createElement('div');
                         langIndicator.className = 'language-indicator';
                         langIndicator.textContent = language;
                         codeContent.appendChild(langIndicator);
-                        
+
                         // Create a code element with line numbers
                         codeContent.innerHTML = createCodeBlockWithLineNumbers(compiledCode, language);
                         codeBlockDiv.appendChild(codeContent);
@@ -297,10 +321,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Function to get language from file path
     function getLanguageFromPath(path) {
         if (!path) return 'text';
-        
+
         // Extract the file extension
         const extension = path.split('.').pop().toLowerCase();
-        
+
         // Map common extensions to languages
         const languageMap = {
             'js': 'javascript',
@@ -329,17 +353,17 @@ document.addEventListener('DOMContentLoaded', () => {
             'sql': 'sql',
             'vue': 'vue'
         };
-        
+
         return languageMap[extension] || 'text';
     }
-    
+
     // Function to compile text edits into a single code block
     function compileTextEditsIntoCode(edits) {
         if (!edits || !edits.length) return '';
-        
+
         // Collect all text edits, sorted by line number
         const sortedEdits = [];
-        
+
         // Process each edit group
         edits.forEach(editGroup => {
             if (editGroup && editGroup.length) {
@@ -359,19 +383,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
         });
-        
+
         // Sort by line number
         sortedEdits.sort((a, b) => a.line - b.line);
-        
+
         // Combine into single code block
         return sortedEdits.map(edit => edit.text).join('\n');
     }
-    
+
     // Function to create a code block with line numbers
     function createCodeBlockWithLineNumbers(code, language) {
         const lines = code.split('\n');
         let result = '';
-        
+
         for (let i = 0; i < lines.length; i++) {
             // Escape HTML to prevent XSS
             const escapedContent = lines[i]
@@ -380,13 +404,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
-                
+
             result += `<div class="code-line">
                 <span class="line-number">${i + 1}</span>
                 <span class="line-content">${escapedContent}</span>
             </div>`;
         }
-        
+
         return result;
     }
 });
