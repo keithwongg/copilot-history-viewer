@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', () => {
     // DOM elements
     const dropArea = document.getElementById('drop-area');
@@ -216,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 // Check for inline code blocks (```code```)
-                if (!inCodeBlock && resp.value.includes("```")) {
+                if (!inCodeBlock && resp.value.includes("```") || resp.value.includes("`")) {
                     // Process the inline code blocks without interrupting the flow
                     const processedText = formatInlineCodeBlocks(resp.value);
                     const textDiv = document.createElement('div');
@@ -236,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Handle code edits
-            else if (resp.kind === 'textEditGroup' && inCodeBlock) {
+            else if (resp.kind === 'textEditGroup') {
                 // This is an edit to be displayed in the code block
                 const codeBlockDiv = document.createElement('div');
                 codeBlockDiv.className = 'code-edit-block';
@@ -246,36 +245,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 filePathDiv.className = 'code-edit-header';
                 const path = resp.uri ? resp.uri.path || resp.uri.fsPath : 'Unknown file';
                 const fileName = getDisplayFileName(path);
-                filePathDiv.textContent = `File: ${fileName}`;
+                
+                // Extract the file extension to determine language
+                const language = getLanguageFromPath(path);
+                filePathDiv.textContent = `File: ${fileName} (${language})`;
                 codeBlockDiv.appendChild(filePathDiv);
 
                 // Process edits
                 if (resp.edits && resp.edits.length > 0) {
-                    // Check if there are actual edits to display
-                    let hasContent = false;
-                    resp.edits.forEach(editGroup => {
-                        if (editGroup && editGroup.length > 0) {
-                            editGroup.forEach(edit => {
-                                if (edit.text) {
-                                    hasContent = true;
-                                    const codeContent = document.createElement('pre');
-                                    codeContent.className = 'code-content';
-                                    codeContent.textContent = edit.text;
-                                    codeBlockDiv.appendChild(codeContent);
-
-                                    // Line range info if available
-                                    if (edit.range) {
-                                        const rangeInfo = document.createElement('div');
-                                        rangeInfo.className = 'line-range-info';
-                                        rangeInfo.textContent = `Lines ${edit.range.startLineNumber}-${edit.range.endLineNumber}`;
-                                        codeBlockDiv.appendChild(rangeInfo);
-                                    }
-                                }
-                            });
-                        }
-                    });
-
-                    if (!hasContent) {
+                    // Compile all edits into a single code block
+                    const compiledCode = compileTextEditsIntoCode(resp.edits);
+                    
+                    if (compiledCode) {
+                        const codeContent = document.createElement('pre');
+                        codeContent.className = 'code-content';
+                        
+                        // Add language indicator
+                        const langIndicator = document.createElement('div');
+                        langIndicator.className = 'language-indicator';
+                        langIndicator.textContent = language;
+                        codeContent.appendChild(langIndicator);
+                        
+                        // Create a code element with line numbers
+                        codeContent.innerHTML = createCodeBlockWithLineNumbers(compiledCode, language);
+                        codeBlockDiv.appendChild(codeContent);
+                    } else {
                         const noContent = document.createElement('div');
                         noContent.className = 'code-content no-content';
                         noContent.textContent = '(No visible text edits in this change)';
@@ -298,5 +292,101 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         return processedContents;
+    }
+
+    // Function to get language from file path
+    function getLanguageFromPath(path) {
+        if (!path) return 'text';
+        
+        // Extract the file extension
+        const extension = path.split('.').pop().toLowerCase();
+        
+        // Map common extensions to languages
+        const languageMap = {
+            'js': 'javascript',
+            'jsx': 'javascript',
+            'ts': 'typescript',
+            'tsx': 'typescript',
+            'py': 'python',
+            'html': 'html',
+            'css': 'css',
+            'java': 'java',
+            'c': 'c',
+            'cpp': 'cpp',
+            'cs': 'csharp',
+            'go': 'go',
+            'php': 'php',
+            'rb': 'ruby',
+            'rs': 'rust',
+            'swift': 'swift',
+            'md': 'markdown',
+            'json': 'json',
+            'yml': 'yaml',
+            'yaml': 'yaml',
+            'xml': 'xml',
+            'sh': 'shell',
+            'bash': 'bash',
+            'sql': 'sql',
+            'vue': 'vue'
+        };
+        
+        return languageMap[extension] || 'text';
+    }
+    
+    // Function to compile text edits into a single code block
+    function compileTextEditsIntoCode(edits) {
+        if (!edits || !edits.length) return '';
+        
+        // Collect all text edits, sorted by line number
+        const sortedEdits = [];
+        
+        // Process each edit group
+        edits.forEach(editGroup => {
+            if (editGroup && editGroup.length) {
+                editGroup.forEach(edit => {
+                    if (edit.text && edit.range) {
+                        sortedEdits.push({
+                            text: edit.text,
+                            line: edit.range.startLineNumber || 0
+                        });
+                    } else if (edit.text) {
+                        // If no range, just add the text
+                        sortedEdits.push({
+                            text: edit.text,
+                            line: 0
+                        });
+                    }
+                });
+            }
+        });
+        
+        // Sort by line number
+        sortedEdits.sort((a, b) => a.line - b.line);
+        
+        // Combine into single code block
+        return sortedEdits.map(edit => edit.text).join('\n');
+    }
+    
+    // Function to create a code block with line numbers
+    function createCodeBlockWithLineNumbers(code, language) {
+        const lines = code.split('\n');
+        let result = '';
+        
+        for (let i = 0; i < lines.length; i++) {
+            // Escape HTML to prevent XSS
+            const escapedContent = lines[i]
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+                
+            result += `<div class="code-line">
+                <span class="line-number">${i + 1}</span>
+                <span class="line-content">${escapedContent}</span>
+            </div>`;
+        }
+        
+        return result;
     }
 });
