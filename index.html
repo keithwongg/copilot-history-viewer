@@ -106,9 +106,9 @@
 
         .message-user {
             background-color: var(--user-bubble-color);
-            border-radius: 8px 8px 8px 0;
+            border-radius: 8px 8px 0 8px;
             padding: 12px;
-            margin-right: 20%;
+            margin-left: 20%;
             position: relative;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
@@ -117,7 +117,7 @@
             content: "User";
             position: absolute;
             top: -20px;
-            left: 0;
+            right: 0;
             font-size: 12px;
             color: #555;
             font-weight: bold;
@@ -125,18 +125,22 @@
 
         .message-ai {
             background-color: var(--ai-bubble-color);
-            border-radius: 8px 8px 0 8px;
+            border-radius: 8px 8px 8px 0;
             padding: 12px;
-            margin-left: 20%;
+            margin-right: 20%;
             position: relative;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .message-ai.has-code-edits {
+            border-left: 3px solid #4CAF50;
         }
 
         .message-ai:before {
             content: "GitHub Copilot";
             position: absolute;
             top: -20px;
-            right: 0;
+            left: 0;
             font-size: 12px;
             color: #555;
             font-weight: bold;
@@ -157,6 +161,74 @@
         .message pre {
             padding: 8px;
             overflow-x: auto;
+        }
+
+        .code-edit-block {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .code-edit-header {
+            background-color: #e8e8e8;
+            padding: 8px 12px;
+            font-weight: bold;
+            border-bottom: 1px solid #ddd;
+            font-size: 0.9em;
+            color: #444;
+        }
+
+        .code-content {
+            padding: 12px;
+            margin: 0;
+            white-space: pre-wrap;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+            max-height: 400px;
+            overflow-y: auto;
+            background-color: #f0f0f0;
+            line-height: 1.5;
+        }
+
+        .inline-code {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background-color: #f0f0f0;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 0.9em;
+            color: #e83e8c;
+        }
+
+        .code-inline-block {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background-color: #f0f0f0;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin: 8px 0;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            display: block;
+            line-height: 1.5;
+            color: #333;
+            overflow-x: auto;
+        }
+
+        .no-content {
+            color: #999;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .line-range-info {
+            font-size: 0.8em;
+            color: #666;
+            padding: 4px 12px;
+            background-color: #f4f4f4;
+            border-top: 1px dashed #ddd;
         }
 
         .timestamp {
