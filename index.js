@@ -413,4 +413,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
         return result;
     }
+
+    // Theme toggling functionality
+    const themeToggle = document.getElementById('theme-toggle');
+
+    // Function to toggle theme
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcon();
+    }
+
+    // Update the theme toggle icon based on current theme
+    function updateThemeIcon() {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+        themeToggle.innerHTML = currentTheme === 'dark' ? '🌙' : '☀️';
+    }
+
+    // Initialize theme from localStorage or default to light
+    function initTheme() {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        updateThemeIcon();
+    }
+
+    // Add event listener to theme toggle button
+    themeToggle.addEventListener('click', toggleTheme);
+
+    // Initialize theme when page loads
+    initTheme();
+
 });

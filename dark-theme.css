@@ -1,0 +1,120 @@
+/* Dark theme styles for Copilot Chat History Viewer */
+
+/* Dark theme variables based on GitHub's dark theme */
+[data-theme="dark"] {
+    --primary-color: #58a6ff;
+    --secondary-color: #21262d;
+    --border-color: #30363d;
+    --text-color: #c9d1d9;
+    --user-bubble-color: #2a3644;
+    --ai-bubble-color: #2b3437;
+    --code-bg-color: #161b22;
+    --bg-color: #0d1117;
+    --container-bg: #161b22;
+    --code-text-color: #c9d1d9;
+    --inline-code-color: #ff7b72;
+    --spinner-overlay: rgba(13, 17, 23, 0.8);
+    --header-color: #58a6ff;
+    --shadow-color: rgba(0, 0, 0, 0.4);
+    --gradient-color: var(--ai-bubble-color);
+}
+
+/* New CSS variables to add to :root */
+:root {
+    --bg-color: #fcfcfc;
+    --container-bg: white;
+    --code-text-color: #333;
+    --inline-code-color: #e83e8c;
+    --spinner-overlay: rgba(255, 255, 255, 0.8);
+    --header-color: #0066b8;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --gradient-color: var(--ai-bubble-color);
+}
+
+/* Dark theme toggle button */
+.theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 1000;
+    font-size: 1.2rem;
+    transition: background-color 0.3s;
+    box-shadow: 0 2px 5px var(--shadow-color);
+}
+
+.theme-toggle:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Updated CSS properties to use variables */
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+.request-container {
+    background-color: var(--container-bg);
+    box-shadow: 0 1px 3px var(--shadow-color);
+}
+
+.code-edit-block {
+    background-color: var(--container-bg);
+    border-color: var(--border-color);
+    box-shadow: 0 1px 3px var(--shadow-color);
+}
+
+.code-edit-header {
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+.code-content,
+.line-content {
+    color: var(--code-text-color);
+}
+
+.inline-code {
+    color: var(--inline-code-color);
+}
+
+.code-inline-block {
+    color: var(--code-text-color);
+}
+
+.language-indicator,
+.line-number {
+    color: var(--text-color);
+    background-color: var(--secondary-color);
+    border-color: var(--border-color);
+}
+
+.message-ai.collapsed::after {
+    background: linear-gradient(transparent, var(--gradient-color));
+}
+
+.spinner-container {
+    background-color: var(--spinner-overlay);
+}
+
+.timestamp,
+.line-range-info {
+    color: var(--text-color);
+    opacity: 0.7;
+}
+
+h1,
+h2 {
+    color: var(--header-color);
+}
