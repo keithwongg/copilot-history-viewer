@@ -92,13 +92,13 @@ document.addEventListener('DOMContentLoaded', () => {
             requestContainer.className = 'request-container';
 
             // Add Conversation Counter
-            const conversationCounter = document.createElement('div');
-            conversationCounter.className = 'conversation-counter';
-            const conversationNumber = document.createElement('span');
-            conversationNumber.className = 'conversation-number';
-            conversationNumber.textContent = `# ${data.requests.indexOf(request) + 1}`;
-            conversationCounter.appendChild(conversationNumber);
-            requestContainer.appendChild(conversationCounter);
+            // const conversationCounter = document.createElement('div');
+            // conversationCounter.className = 'conversation-counter';
+            // const conversationNumber = document.createElement('span');
+            // conversationNumber.className = 'conversation-number';
+            // conversationNumber.textContent = `# ${data.requests.indexOf(request) + 1}`;
+            // conversationCounter.appendChild(conversationNumber);
+            // requestContainer.appendChild(conversationCounter);
 
             // Add User Message
             if (request.message && request.message.text) {
@@ -115,14 +115,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Add AI Responses
             if (Array.isArray(request.response)) {
-                // Filter out any non-text responses
+                // Include both text responses and toolInvocationSerialized objects
                 const textResponses = request.response.filter(resp => {
-                    return resp.value && typeof resp.value === 'string' &&
-                        (!resp.kind || resp.kind !== 'toolInvocationSerialized');
+                    return (resp.value && typeof resp.value === 'string') ||
+                        (resp.kind === 'toolInvocationSerialized');
                 });
 
                 if (textResponses.length > 0) {
-                    // Process code blocks in the responses
+                    // Process code blocks and tool invocations in the responses
                     const processedResponses = processCodeBlocks(request.response);
 
                     if (processedResponses.length > 0) {
@@ -130,11 +130,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         const aiResponse = document.createElement('div');
                         aiResponse.className = 'message message-ai collapsed';
 
-                        // Check if this response contains code edits and add a special class
-                        const hasCodeEdits = request.response.some(resp => resp.kind === 'textEditGroup');
-                        if (hasCodeEdits) {
-                            aiResponse.classList.add('has-code-edits');
-                        }
+                        // Check if this response contains code edits or terminal commands and add a special class
+                        // const hasCodeEdits = request.response.some(resp => resp.kind === 'textEditGroup');
+                        // const hasTerminalCommands = request.response.some(resp => resp.kind === 'toolInvocationSerialized');
+
+                        // if (hasCodeEdits) {
+                        //     aiResponse.classList.add('has-code-edits');
+                        // }
+                        // if (hasTerminalCommands) {
+                        //     aiResponse.classList.add('has-terminal-commands');
+                        // }
 
                         // Add all processed content
                         processedResponses.forEach(content => {
@@ -213,6 +218,17 @@ document.addEventListener('DOMContentLoaded', () => {
         // Process each response item
         for (let i = 0; i < responses.length; i++) {
             const resp = responses[i];
+
+            console.log(`check tool specific data`, resp.toolSpecificData);
+            // Handle terminal commands (toolInvocationSerialized)
+            if (resp.kind === 'toolInvocationSerialized' && resp.toolSpecificData !== undefined) {
+                // Process the terminal command
+                const terminalBlock = createTerminalCommandBlock(resp);
+                if (terminalBlock) {
+                    processedContents.push(terminalBlock);
+                }
+                continue;
+            }
 
             // Handle text content
             if (resp.value && typeof resp.value === 'string') {
@@ -421,6 +437,82 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         return result;
+    }
+
+    // Function to create a terminal command block from toolInvocationSerialized
+    function createTerminalCommandBlock(toolInvocation) {
+        if (!toolInvocation) {
+            return null;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'terminal-command-container';
+
+        // Add the invocation message if it exists
+        if (toolInvocation.invocationMessage) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'tool-invocation-message';
+            messageDiv.textContent = toolInvocation.invocationMessage;
+            container.appendChild(messageDiv);
+        }
+
+        // Extract command and language from toolSpecificData
+        let command = '';
+        let language = 'sh'; // Default language
+
+        try {
+            // Parse toolSpecificData from various formats
+            const toolData = toolInvocation.toolSpecificData;
+
+            if (typeof toolData === 'string') {
+                try {
+                    // Try parsing as JSON
+                    const parsedData = JSON.parse(toolData);
+                    command = parsedData.command || '';
+                    language = parsedData.language || 'sh';
+                } catch (e) {
+                    // If parsing fails, use the string as is
+                    command = toolData;
+                }
+            } else if (toolData && typeof toolData === 'object') {
+                // Direct object format
+                command = toolData.command || '';
+                language = toolData.language || (toolData.kind === 'terminal' ? 'sh' : 'text');
+            } else if (toolInvocation.command) {
+                // Command might be at the root level
+                command = toolInvocation.command;
+            }
+
+            // If we couldn't find a command, look in invocation property
+            if (!command && toolInvocation.invocation && toolInvocation.invocation.command) {
+                command = toolInvocation.invocation.command;
+            }
+
+            if (command) {
+                // Create the code block in the format of:
+                // ```language
+                // command
+                // ```
+                const codeBlockDiv = document.createElement('pre');
+                codeBlockDiv.className = 'terminal-command';
+                codeBlockDiv.setAttribute('data-language', language);
+
+                // Create code content
+                const codeElement = document.createElement('code');
+                codeElement.textContent = command;
+
+                codeBlockDiv.appendChild(codeElement);
+                container.appendChild(codeBlockDiv);
+            }
+        } catch (error) {
+            console.error('Error processing terminal command:', error);
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'terminal-command-error';
+            errorDiv.textContent = 'Error processing terminal command';
+            container.appendChild(errorDiv);
+        }
+
+        return container;
     }
 
     // Theme toggling functionality
